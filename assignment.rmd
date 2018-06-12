@@ -1,0 +1,76 @@
+---
+title: "Prediction Assignment"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r cars}
+#install.packages('caret', dependencies = TRUE);
+#install.packages("randomForest");install.packages("rpart");install.packages("rpart.plot")
+#install.packages("car")
+library(caret, , lib.loc="~/anaconda3/lib/R/library")
+library(randomForest)
+library(rpart, lib.loc="~/anaconda3/lib/R/library")
+library(rpart.plot, lib.loc="~/R/x86_64-pc-linux-gnu-library/3.4")
+set.seed(1234) #setting seed value
+```
+
+
+```{r}
+#load data
+trainData <- read.csv("~/Desktop/courseraproject/pml-training.csv", na.strings=c("NA","#DIV/0!", ""))
+testData <- read.csv("~/Desktop/courseraproject/pml-testing.csv", na.strings=c("NA","#DIV/0!", "")) 
+
+#Deleting columns with missing values
+trainData <- trainData[,colSums(is.na(trainData)) == 0]
+testData <- testData[,colSums(is.na(testData)) == 0]
+
+#deleting unnecessary columns
+trainData <- trainData[,-c(1:7)]
+testData <- testData[,-c(1:7)]
+
+dim(trainData)
+head(trainData)
+
+dim(testData)
+head(testData)
+```
+
+```{r}
+#crossvalidation
+samples <- createDataPartition(y=trainData$classe, p=0.75, list=FALSE)
+subTrain <- trainData[samples,]
+subTest <- trainData[-samples,]
+dim(subTrain)
+head(subTrain)
+
+dim(subTest)
+head(subTest)
+summary(subTest$classe)
+```
+
+```{r}
+#prediction using decision tree
+model1 <- rpart(classe ~ ., data=subTrain, method = "class")
+prediction1 <- predict(model1, subTest, type="class")
+rpart.plot(model1, main="Decision Tree Classification", extra = 100, under=TRUE, faclen = 0)
+confusionMatrix(prediction1, subTest$classe)
+```
+
+```{r}
+#prediction using random forest
+model2 <- randomForest(classe ~ ., data=subTrain, method="class")
+prediction2 <- predict(model2, subTest, type="class")
+confusionMatrix(prediction2, subTest$classe)
+```
+
+```{r}
+#accuracy of random forest algorithm(ie.0.9955) is more than decision tree algorithm(ie.0.7394)
+#using random forest algorithm
+finalPrediction <- predict(model2, testData, type="class")
+finalPrediction
+```
